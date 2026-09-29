@@ -7,7 +7,10 @@
 
 :root {
   color-scheme: light;
-  --background: oklch(1 0 0);
+  /* Slightly off-white page background (iOS "grouped list" style) so the
+     pure-white cards inside each step visibly pop off it instead of every
+     step blending into one continuous page. */
+  --background: #f2f2f7;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);

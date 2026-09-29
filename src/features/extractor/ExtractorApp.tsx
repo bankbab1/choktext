@@ -4,11 +4,13 @@ import {
   Clipboard,
   ClipboardPaste,
   List,
+  MessageSquareText,
   Moon,
   Plus,
   RotateCcw,
   Scissors,
   Sun,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -20,6 +22,17 @@ import { OrderRowCard } from './OrderRowCard'
 import { useExtractor } from './useExtractor'
 
 const MODES = ['manual', 'auto'] as const
+
+function StepHeader({ n, label }: { n: number; label: string }) {
+  return (
+    <div className="mb-2.5 flex items-center gap-2">
+      <span className="flex size-5.5 flex-none items-center justify-center rounded-full bg-primary text-[12px] font-bold text-primary-foreground">
+        {n}
+      </span>
+      <p className="text-[13px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</p>
+    </div>
+  )
+}
 
 export function ExtractorApp() {
   const { theme, toggle: toggleTheme } = useTheme()
@@ -45,6 +58,7 @@ export function ExtractorApp() {
     manualUndo,
     manualQuickCut,
     addRow,
+    clearRows,
     updateRow,
     deleteRow,
     mergeRow,
@@ -97,11 +111,13 @@ export function ExtractorApp() {
         <div className="mx-auto flex min-h-11 max-w-xl items-center gap-2 px-4 md:max-w-2xl lg:max-w-3xl">
           <span
             className={cn(
-              'flex-none rounded-lg bg-primary transition-all',
+              'flex flex-none items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all',
               navCollapsed ? 'size-6' : 'size-7.5',
             )}
             aria-hidden
-          />
+          >
+            <MessageSquareText className={navCollapsed ? 'size-3.5' : 'size-4.5'} strokeWidth={2.25} />
+          </span>
           <span
             className={cn(
               'flex-1 text-[17px] font-semibold transition-all',
@@ -132,10 +148,8 @@ export function ExtractorApp() {
 
       <main className="mx-auto max-w-xl px-4 pb-4 md:max-w-2xl lg:max-w-3xl">
         {/* Step 1: paste */}
-        <section className="mb-6">
-          <p className="mb-2 ml-1 text-[13px] font-semibold tracking-wide text-muted-foreground uppercase">
-            ขั้นตอนที่ 1 · แปะข้อความ
-          </p>
+        <section className="mb-6 rounded-3xl border border-border/60 bg-background p-3.5">
+          <StepHeader n={1} label="แปะข้อความ" />
 
           <div className="mb-2.5 flex gap-0.5 rounded-lg bg-muted p-0.5">
             {MODES.map((m) => (
@@ -212,12 +226,24 @@ export function ExtractorApp() {
 
         {/* Step 2: review */}
         {hasResults && (
-          <section className="mb-6">
-            <div className="mb-2 flex items-baseline justify-between">
-              <p className="ml-1 text-[13px] font-semibold tracking-wide text-muted-foreground uppercase">
-                ขั้นตอนที่ 2 · ตรวจสอบ / แก้ไข
-              </p>
-              <span className="text-[13px] text-muted-foreground">{rows.length} แถว</span>
+          <section className="mb-6 rounded-3xl border border-border/60 bg-background p-3.5">
+            <div className="mb-2.5 flex items-center justify-between">
+              <StepHeader n={2} label="ตรวจสอบ / แก้ไข" />
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] text-muted-foreground">{rows.length} แถว</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-[12.5px] text-destructive"
+                  aria-label="ล้างรายการที่แยกไว้ (ข้อความที่วางไว้จะไม่หาย)"
+                  title="ล้างรายการที่แยกไว้ — ข้อความที่วางไว้ด้านบนจะไม่หาย"
+                  onClick={clearRows}
+                >
+                  <X />
+                  ล้างรายการ
+                </Button>
+              </div>
             </div>
             <p className="mx-1 mb-3 text-[13px] text-muted-foreground">
               แถวสีเหลือง = ดูน่าจะไม่ใช่รายการอาหาร (เช่น หัวข้อ, หมายเหตุ) ตรวจสอบแล้วใช้ปุ่มลบ หรือปุ่มรวมแถวด้านล่างการ์ดเพื่อแก้ไข
@@ -247,10 +273,8 @@ export function ExtractorApp() {
 
         {/* Step 3: copy */}
         {hasResults && (
-          <section className="mb-6">
-            <p className="mb-2 ml-1 text-[13px] font-semibold tracking-wide text-muted-foreground uppercase">
-              ขั้นตอนที่ 3 · คัดลอกไปวาง
-            </p>
+          <section className="mb-6 rounded-3xl border border-border/60 bg-background p-3.5">
+            <StepHeader n={3} label="คัดลอกไปวาง" />
             <p className="mx-1 mb-3 text-[13px] text-muted-foreground">
               แตะปุ่มด้านล่าง แล้วไปแตะเลือก "เซลล์คอลัมน์ {firstColLabel} แถวแรก" ใน Google Sheets แล้ววาง (Paste) ครั้งเดียว
               ระบบจะกระจายข้อมูลลงทุกแถว/คอลัมน์ให้อัตโนมัติ

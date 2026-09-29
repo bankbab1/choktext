@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ChevronDown, ChevronUp, Copy, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Copy, Merge, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { AutoGrowTextarea } from './AutoGrowTextarea'
@@ -14,6 +14,22 @@ interface OrderRowCardProps {
   onDelete: () => void
   onMergeUp: () => void
   onMergeDown: () => void
+}
+
+// True only for an actual pasted-in line break (exactly two lines) — not
+// for a long line that merely wraps visually. That's the ambiguous case a
+// manual cut can produce (e.g. cutting across a real "Enter" by accident),
+// where the value should probably read as one "A + B" entry instead.
+function hasExactlyTwoLines(value: string): boolean {
+  const lines = value.split('\n')
+  return lines.length === 2 && lines.every((l) => l.trim().length > 0)
+}
+
+function joinLinesWithPlus(value: string): string {
+  return value
+    .split('\n')
+    .map((l) => l.trim())
+    .join(' + ')
 }
 
 function FieldCopyButton({ getValue }: { getValue: () => string }) {
@@ -44,6 +60,55 @@ function FieldCopyButton({ getValue }: { getValue: () => string }) {
   )
 }
 
+function FieldMergeLinesButton({ onMerge }: { onMerge: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-xs"
+      className="text-primary"
+      aria-label='รวมเป็นบรรทัดเดียวด้วย "+"'
+      title='ดูเหมือนมี Enter ขึ้นบรรทัดใหม่ — แตะเพื่อรวมเป็นบรรทัดเดียวด้วย "+"'
+      onClick={onMerge}
+    >
+      <Merge />
+    </Button>
+  )
+}
+
+interface FieldBlockProps {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  bold?: boolean
+}
+
+function FieldBlock({ label, value, onChange, bold }: FieldBlockProps) {
+  const showMerge = hasExactlyTwoLines(value)
+  return (
+    <div className="order-field border-b-[0.5px] border-border/70 px-3.5 pt-2.5 pb-2">
+      <div className="mb-0.5 flex items-center justify-between">
+        <span className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+          {label}
+        </span>
+        <div className="-mr-1 flex items-center gap-0.5">
+          {showMerge && <FieldMergeLinesButton onMerge={() => onChange(joinLinesWithPlus(value))} />}
+          <FieldCopyButton getValue={() => value} />
+        </div>
+      </div>
+      <AutoGrowTextarea
+        rows={1}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          'w-full border-0 bg-transparent p-0 text-base text-foreground outline-none',
+          bold && 'font-semibold',
+        )}
+      />
+    </div>
+  )
+}
+
 export function OrderRowCard({
   row,
   isFirst,
@@ -62,35 +127,8 @@ export function OrderRowCard({
           : 'shadow-[inset_0_0_0_0.5px_var(--border)]',
       )}
     >
-      <div className="order-field border-b-[0.5px] border-border/70 px-3.5 pt-2.5 pb-2">
-        <div className="mb-0.5 flex items-center justify-between">
-          <span className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
-            Name
-          </span>
-          <FieldCopyButton getValue={() => row.name} />
-        </div>
-        <AutoGrowTextarea
-          rows={1}
-          value={row.name}
-          onChange={(e) => onChange('name', e.target.value)}
-          className="w-full border-0 bg-transparent p-0 text-base font-semibold text-foreground outline-none"
-        />
-      </div>
-
-      <div className="order-field border-b-[0.5px] border-border/70 px-3.5 pt-2.5 pb-2">
-        <div className="mb-0.5 flex items-center justify-between">
-          <span className="text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
-            Menu
-          </span>
-          <FieldCopyButton getValue={() => row.menu} />
-        </div>
-        <AutoGrowTextarea
-          rows={1}
-          value={row.menu}
-          onChange={(e) => onChange('menu', e.target.value)}
-          className="w-full border-0 bg-transparent p-0 text-base text-foreground outline-none"
-        />
-      </div>
+      <FieldBlock label="Name" value={row.name} onChange={(v) => onChange('name', v)} bold />
+      <FieldBlock label="Menu" value={row.menu} onChange={(v) => onChange('menu', v)} />
 
       <div className="flex justify-end gap-2.5 px-3 py-2">
         <Button

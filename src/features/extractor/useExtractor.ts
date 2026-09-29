@@ -71,6 +71,14 @@ export function useExtractor() {
     setRows((prev) => [...prev, { id, name: '', menu: '', flagged: false }])
   }, [])
 
+  // Clears just the parsed rows (e.g. after parsing with the wrong mode by
+  // mistake) without touching the pasted text — a single click, no
+  // confirmation, since the text is still there to re-parse.
+  const clearRows = useCallback(() => {
+    setRows([])
+    setCopyStatus(null)
+  }, [])
+
   const updateRow = useCallback((id: number, field: 'name' | 'menu', value: string) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)))
   }, [])
@@ -269,6 +277,7 @@ export function useExtractor() {
     manualQuickCut,
     resetManualState,
     addRow,
+    clearRows,
     updateRow,
     deleteRow,
     mergeRow,
