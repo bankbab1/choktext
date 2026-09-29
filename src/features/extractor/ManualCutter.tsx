@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Check,
   ChevronLeft,
@@ -35,10 +35,18 @@ export function ManualCutter({
   const [quickCutStatus, setQuickCutStatus] = useState<{ tone: 'ok' | 'err'; message: string } | null>(null)
   const fallbackRef = useRef<HTMLTextAreaElement>(null)
   const statusTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const caretRef = useRef<HTMLSpanElement>(null)
 
   const atStart = pos === 0
   const atEnd = pos >= text.length
   const isDone = text.length === 0 && !hasName
+
+  // Keep the cursor in view inside the scrollable text panel whenever it
+  // moves — via the nav buttons, a cut, discard, or undo — instead of
+  // leaving the user scrolled somewhere else with no visible caret.
+  useEffect(() => {
+    caretRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [pos, text])
 
   const handleQuickCut = async () => {
     const cutValue = onQuickCut()
@@ -103,6 +111,7 @@ export function ManualCutter({
           {text.slice(0, pos)}
         </span>
         <span
+          ref={caretRef}
           className={cn(
             'mx-[-1px] inline-block h-[1.1em] w-[2px] animate-[manual-caret-blink_1s_step-start_infinite] align-text-bottom',
             hasName ? 'bg-success' : 'bg-primary',

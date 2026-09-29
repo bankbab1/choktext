@@ -348,10 +348,6 @@ export function ExtractorApp() {
         )}
       </main>
 
-      <footer className="px-4 py-4 text-center text-xs text-muted-foreground">
-        <p>ทำงานทั้งหมดในเบราว์เซอร์ ไม่มีการส่งข้อมูลออกไปที่ใด</p>
-      </footer>
-
       <ClearConfirmDrawer open={clearDrawerOpen} onOpenChange={(o) => (o ? null : cancelClear())} onConfirm={confirmClear} />
     </div>
   )
