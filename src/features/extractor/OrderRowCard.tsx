@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { AutoGrowTextarea } from './AutoGrowTextarea'
 import { copyValue } from './clipboard'
+import { sanitizeForSheets } from './textParsing'
 import type { OrderRow } from './types'
 
 interface OrderRowCardProps {
@@ -23,13 +24,6 @@ interface OrderRowCardProps {
 function hasExactlyTwoLines(value: string): boolean {
   const lines = value.split('\n')
   return lines.length === 2 && lines.every((l) => l.trim().length > 0)
-}
-
-function joinLinesWithPlus(value: string): string {
-  return value
-    .split('\n')
-    .map((l) => l.trim())
-    .join(' + ')
 }
 
 function FieldCopyButton({ getValue }: { getValue: () => string }) {
@@ -92,7 +86,7 @@ function FieldBlock({ label, value, onChange, bold }: FieldBlockProps) {
           {label}
         </span>
         <div className="-mr-1 flex items-center gap-0.5">
-          {showMerge && <FieldMergeLinesButton onMerge={() => onChange(joinLinesWithPlus(value))} />}
+          {showMerge && <FieldMergeLinesButton onMerge={() => onChange(sanitizeForSheets(value))} />}
           <FieldCopyButton getValue={() => value} />
         </div>
       </div>

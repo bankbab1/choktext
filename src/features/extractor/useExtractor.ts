@@ -5,6 +5,7 @@ import {
   charRetreat,
   countQty,
   parseText,
+  sanitizeForSheets,
   tokenAdvance,
   tokenRetreat,
 } from './textParsing'
@@ -123,8 +124,10 @@ export function useExtractor() {
     () =>
       rows
         .map((r) => {
-          const cols = menuFirst ? [r.menu, r.name] : [r.name, r.menu]
-          if (qtyEnabled) cols.push(String(countQty(r.name)))
+          const name = sanitizeForSheets(r.name)
+          const menu = sanitizeForSheets(r.menu)
+          const cols = menuFirst ? [menu, name] : [name, menu]
+          if (qtyEnabled) cols.push(String(countQty(name)))
           return cols.join('\t')
         })
         .join('\n'),

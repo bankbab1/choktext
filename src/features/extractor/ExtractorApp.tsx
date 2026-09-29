@@ -21,7 +21,7 @@ import { AutoGrowTextarea } from './AutoGrowTextarea'
 import { ClearConfirmDrawer } from './ClearConfirmDrawer'
 import { ManualCutter } from './ManualCutter'
 import { OrderRowCard } from './OrderRowCard'
-import { countQty } from './textParsing'
+import { countQty, sanitizeForSheets } from './textParsing'
 import { useExtractor } from './useExtractor'
 
 const MODES = ['manual', 'auto'] as const
@@ -341,14 +341,16 @@ export function ExtractorApp() {
                 </thead>
                 <tbody>
                   {rows.map((row) => {
-                    const [first, second] = menuFirst ? [row.menu, row.name] : [row.name, row.menu]
+                    const name = sanitizeForSheets(row.name)
+                    const menu = sanitizeForSheets(row.menu)
+                    const [first, second] = menuFirst ? [menu, name] : [name, menu]
                     return (
                       <tr key={row.id} className="border-b-[0.5px] border-border last:border-b-0">
                         <td className="px-3 py-2 align-top break-words">{first || '—'}</td>
                         <td className="px-3 py-2 align-top break-words font-medium">{second || '—'}</td>
                         {qtyEnabled && (
                           <td className="px-3 py-2 text-center align-top font-medium tabular-nums">
-                            {countQty(row.name)}
+                            {countQty(name)}
                           </td>
                         )}
                       </tr>

@@ -7,6 +7,22 @@ const SEPARATOR_LINE = /^[-=_*~•·.\s]{3,}$/
 
 type DraftRow = Omit<OrderRow, 'id'>
 
+// Google Sheets paste has no concept of "this plain-text field has an
+// embedded line break but stays in one cell" — a raw \n inside a TSV field
+// is indistinguishable from the \n that separates rows, so a value with a
+// real embedded newline (e.g. an over-eager manual cut) throws off row
+// alignment on paste and can leave neighboring cells looking merged/blank
+// across several rows. Flattening every field to one line before it ever
+// reaches the clipboard avoids that regardless of the exact paste behavior.
+export function sanitizeForSheets(value: string): string {
+  if (!value.includes('\n')) return value
+  return value
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join(' + ')
+}
+
 // QTY = headcount for the order: names are written as "A + B + C" for a
 // shared order, so the count of "+"-separated (non-empty) parts is the
 // number of people on that row. A name with no "+" is just one person.
