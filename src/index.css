@@ -6,7 +6,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -109,6 +109,7 @@ body {
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -155,4 +156,12 @@ body {
   html {
     @apply font-sans;
   }
+}
+
+/* Stop the browser's native pull-to-refresh / rubber-band gesture from
+   firing when the page is scrolled to the top and the user swipes down —
+   installed-webapp-style behavior instead of triggering a page reload. */
+html,
+body {
+  overscroll-behavior-y: none;
 }

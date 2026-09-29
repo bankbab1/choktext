@@ -17,4 +17,10 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  server: {
+    // Bind all interfaces (not just localhost) so the dev server is also
+    // reachable from other devices on the same network, e.g. a phone at
+    // http://<this-machine's-LAN-IP>:5180 — Vite defaults to localhost-only.
+    host: true,
+  },
 })

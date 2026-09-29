@@ -1,23 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  ArrowLeftRight,
   Clipboard,
   ClipboardPaste,
   List,
+  Moon,
   Plus,
   RotateCcw,
   Scissors,
+  Sun,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useSystemTheme } from '@/hooks/use-system-theme'
+import { useTheme } from '@/hooks/use-theme'
 import { AutoGrowTextarea } from './AutoGrowTextarea'
 import { ClearConfirmDrawer } from './ClearConfirmDrawer'
 import { ManualCutter } from './ManualCutter'
 import { OrderRowCard } from './OrderRowCard'
 import { useExtractor } from './useExtractor'
 
+const MODES = ['manual', 'auto'] as const
+
 export function ExtractorApp() {
-  useSystemTheme()
+  const { theme, toggle: toggleTheme } = useTheme()
 
   const api = useExtractor()
   const {
@@ -46,6 +51,8 @@ export function ExtractorApp() {
     buildTsv,
     copyAllForSheets,
     pasteIntoRawText,
+    menuFirst,
+    toggleColumnOrder,
   } = api
 
   const [navCollapsed, setNavCollapsed] = useState(false)
@@ -81,10 +88,13 @@ export function ExtractorApp() {
     }
   }
 
+  const firstColLabel = menuFirst ? 'Menu' : 'Name'
+  const secondColLabel = menuFirst ? 'Name' : 'Menu'
+
   return (
     <div className="min-h-dvh bg-background pb-10 text-foreground">
       <header className="sticky top-0 z-20 border-b-[0.5px] border-border bg-background/70 backdrop-blur-xl backdrop-saturate-150">
-        <div className="mx-auto flex min-h-11 max-w-xl items-center gap-2 px-4">
+        <div className="mx-auto flex min-h-11 max-w-xl items-center gap-2 px-4 md:max-w-2xl lg:max-w-3xl">
           <span
             className={cn(
               'flex-none rounded-lg bg-primary transition-all',
@@ -94,23 +104,33 @@ export function ExtractorApp() {
           />
           <span
             className={cn(
-              'text-[17px] font-semibold transition-all',
+              'flex-1 text-[17px] font-semibold transition-all',
               navCollapsed ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0',
             )}
           >
             LINE Order Extractor
           </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            aria-label={theme === 'light' ? 'สลับเป็นโหมดมืด' : 'สลับเป็นโหมดสว่าง'}
+            onClick={toggleTheme}
+          >
+            {theme === 'light' ? <Moon /> : <Sun />}
+          </Button>
         </div>
       </header>
 
-      <div className="mx-auto max-w-xl px-4 pt-1 pb-3">
+      <div className="mx-auto max-w-xl px-4 pt-1 pb-3 md:max-w-2xl lg:max-w-3xl">
         <h1 className="text-[30px] font-bold tracking-tight">LINE Order Extractor</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           แปะข้อความจาก LINE → แก้ไข → คัดลอกไปวางใน Google Sheets ทีเดียว
         </p>
       </div>
 
-      <main className="mx-auto max-w-xl px-4 pb-4">
+      <main className="mx-auto max-w-xl px-4 pb-4 md:max-w-2xl lg:max-w-3xl">
         {/* Step 1: paste */}
         <section className="mb-6">
           <p className="mb-2 ml-1 text-[13px] font-semibold tracking-wide text-muted-foreground uppercase">
@@ -118,7 +138,7 @@ export function ExtractorApp() {
           </p>
 
           <div className="mb-2.5 flex gap-0.5 rounded-lg bg-muted p-0.5">
-            {(['auto', 'manual'] as const).map((m) => (
+            {MODES.map((m) => (
               <button
                 key={m}
                 type="button"
@@ -203,18 +223,20 @@ export function ExtractorApp() {
               แถวสีเหลือง = ดูน่าจะไม่ใช่รายการอาหาร (เช่น หัวข้อ, หมายเหตุ) ตรวจสอบแล้วใช้ปุ่มลบ หรือปุ่มรวมแถวด้านล่างการ์ดเพื่อแก้ไข
             </p>
 
-            {rows.map((row, index) => (
-              <OrderRowCard
-                key={row.id}
-                row={row}
-                isFirst={index === 0}
-                isLast={index === rows.length - 1}
-                onChange={(field, value) => updateRow(row.id, field, value)}
-                onDelete={() => deleteRow(row.id)}
-                onMergeUp={() => mergeRow(row.id, 'up')}
-                onMergeDown={() => mergeRow(row.id, 'down')}
-              />
-            ))}
+            <div className="sm:grid sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
+              {rows.map((row, index) => (
+                <OrderRowCard
+                  key={row.id}
+                  row={row}
+                  isFirst={index === 0}
+                  isLast={index === rows.length - 1}
+                  onChange={(field, value) => updateRow(row.id, field, value)}
+                  onDelete={() => deleteRow(row.id)}
+                  onMergeUp={() => mergeRow(row.id, 'up')}
+                  onMergeDown={() => mergeRow(row.id, 'down')}
+                />
+              ))}
+            </div>
 
             <Button type="button" variant="ghost" className="mt-1" onClick={addRow}>
               <Plus />
@@ -230,9 +252,46 @@ export function ExtractorApp() {
               ขั้นตอนที่ 3 · คัดลอกไปวาง
             </p>
             <p className="mx-1 mb-3 text-[13px] text-muted-foreground">
-              แตะปุ่มด้านล่าง แล้วไปแตะเลือก "เซลล์คอลัมน์ Name แถวแรก" ใน Google Sheets แล้ววาง (Paste) ครั้งเดียว
+              แตะปุ่มด้านล่าง แล้วไปแตะเลือก "เซลล์คอลัมน์ {firstColLabel} แถวแรก" ใน Google Sheets แล้ววาง (Paste) ครั้งเดียว
               ระบบจะกระจายข้อมูลลงทุกแถว/คอลัมน์ให้อัตโนมัติ
             </p>
+
+            <div className="mb-3 flex items-center justify-between rounded-2xl bg-card px-3.5 py-2.5 shadow-[inset_0_0_0_0.5px_var(--border)]">
+              <span className="text-[13px] text-muted-foreground">
+                ตัวอย่างที่จะคัดลอก — คอลัมน์แรก: <span className="font-semibold text-foreground">{firstColLabel}</span>
+              </span>
+              <Button type="button" variant="secondary" size="sm" className="rounded-full" onClick={toggleColumnOrder}>
+                <ArrowLeftRight />
+                สลับคอลัมน์
+              </Button>
+            </div>
+
+            <div className="mb-4 max-h-72 overflow-y-auto rounded-2xl bg-card shadow-[inset_0_0_0_0.5px_var(--border)]">
+              <table className="w-full border-collapse text-left text-[13.5px]">
+                <thead className="sticky top-0 z-10 bg-card">
+                  <tr>
+                    <th className="border-b-[0.5px] border-border px-3 py-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+                      {firstColLabel}
+                    </th>
+                    <th className="border-b-[0.5px] border-border px-3 py-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+                      {secondColLabel}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => {
+                    const [first, second] = menuFirst ? [row.menu, row.name] : [row.name, row.menu]
+                    return (
+                      <tr key={row.id} className="border-b-[0.5px] border-border last:border-b-0">
+                        <td className="px-3 py-2 align-top break-words">{first || '—'}</td>
+                        <td className="px-3 py-2 align-top break-words font-medium">{second || '—'}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
             <Button
               type="button"
               className="h-13 w-full rounded-full text-base"

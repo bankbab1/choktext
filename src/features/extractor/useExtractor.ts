@@ -24,12 +24,16 @@ export function useExtractor() {
 
   const [rawText, setRawText] = useState('')
   const [rows, setRows] = useState<OrderRow[]>([])
-  const [mode, setModeState] = useState<Mode>('auto')
+  const [mode, setModeState] = useState<Mode>('manual')
   const [manualState, setManualState] = useState(INITIAL_MANUAL_STATE)
   const historyRef = useRef<HistoryEntry[]>([])
   const [historyLength, setHistoryLength] = useState(0)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>(null)
   const [clearDrawerOpen, setClearDrawerOpen] = useState(false)
+  // Menu-first is the default column order for the Sheets export/preview —
+  // swappable since some sheets are laid out Name-first instead.
+  const [menuFirst, setMenuFirst] = useState(true)
+  const toggleColumnOrder = useCallback(() => setMenuFirst((v) => !v), [])
 
   const makeId = () => nextId.current++
 
@@ -101,25 +105,29 @@ export function useExtractor() {
   }, [])
 
   const buildTsv = useCallback(
-    () => rows.map((r) => `${r.name}\t${r.menu}`).join('\n'),
-    [rows],
+    () =>
+      rows
+        .map((r) => (menuFirst ? `${r.menu}\t${r.name}` : `${r.name}\t${r.menu}`))
+        .join('\n'),
+    [rows, menuFirst],
   )
 
   const copyAllForSheets = useCallback(
     async (fallbackEl: HTMLTextAreaElement | null) => {
       const tsv = buildTsv()
       const ok = await copyValue(tsv, fallbackEl)
+      const firstColLabel = menuFirst ? 'Menu' : 'Name'
       setCopyStatus(
         ok
           ? {
               tone: 'ok',
-              message: `คัดลอกแล้ว (${rows.length} แถว) — ไปแตะเซลล์ Name แถวแรกใน Google Sheets แล้ววางได้เลย`,
+              message: `คัดลอกแล้ว (${rows.length} แถว) — ไปแตะเซลล์ ${firstColLabel} แถวแรกใน Google Sheets แล้ววางได้เลย`,
             }
           : { tone: 'err', message: 'คัดลอกอัตโนมัติไม่สำเร็จ กรุณาใช้กล่องคัดลอกด้วยตนเองด้านล่าง' },
       )
       return ok
     },
-    [buildTsv, rows.length],
+    [buildTsv, rows.length, menuFirst],
   )
 
   // ---- Manual mode ----
@@ -267,6 +275,8 @@ export function useExtractor() {
     buildTsv,
     copyAllForSheets,
     pasteIntoRawText,
+    menuFirst,
+    toggleColumnOrder,
   }
 }
 
