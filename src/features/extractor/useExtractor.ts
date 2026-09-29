@@ -38,11 +38,14 @@ export function useExtractor() {
   const [qtyEnabled, setQtyEnabled] = useState(true)
   const toggleQty = useCallback(() => setQtyEnabled((v) => !v), [])
 
-  // Some destination sheets have a merged-cell header spanning several
-  // columns per field (e.g. "Menu" merged across 5 columns before "Name"
-  // starts) — with no merge info in plain-text TSV, matching that layout
-  // means padding each field's value with (span - 1) blank cells so the
-  // next field's value lands under the right column.
+  // Google Sheets does NOT treat an existing merged cell as a single paste
+  // target — pasting a plain, unpadded TSV row lands sequentially in A, B,
+  // C regardless of any merge already there (confirmed: that's what
+  // happened before this padding existed). So the padding is genuinely
+  // needed for the values to land under the right column at all. Pasting
+  // multi-column data across a range that includes a merge unmerges it
+  // either way — that's Sheets' own paste behavior irrespective of
+  // padding, not something fixable from the clipboard content.
   const [columnSpans, setColumnSpans] = useState({ menu: 5, name: 4, qty: 1 })
   const setColumnSpan = useCallback((field: 'menu' | 'name' | 'qty', span: number) => {
     const clamped = Math.max(1, Math.min(50, Math.round(span) || 1))
