@@ -7,6 +7,17 @@ const SEPARATOR_LINE = /^[-=_*~•·.\s]{3,}$/
 
 type DraftRow = Omit<OrderRow, 'id'>
 
+// QTY = headcount for the order: names are written as "A + B + C" for a
+// shared order, so the count of "+"-separated (non-empty) parts is the
+// number of people on that row. A name with no "+" is just one person.
+export function countQty(name: string): number {
+  const parts = name
+    .split('+')
+    .map((p) => p.trim())
+    .filter(Boolean)
+  return parts.length || 1
+}
+
 /**
  * Parses a raw pasted LINE message into Name/Menu rows.
  *

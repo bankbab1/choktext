@@ -13,12 +13,14 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/hooks/use-theme'
 import { AutoGrowTextarea } from './AutoGrowTextarea'
 import { ClearConfirmDrawer } from './ClearConfirmDrawer'
 import { ManualCutter } from './ManualCutter'
 import { OrderRowCard } from './OrderRowCard'
+import { countQty } from './textParsing'
 import { useExtractor } from './useExtractor'
 
 const MODES = ['manual', 'auto'] as const
@@ -67,6 +69,8 @@ export function ExtractorApp() {
     pasteIntoRawText,
     menuFirst,
     toggleColumnOrder,
+    qtyEnabled,
+    toggleQty,
   } = api
 
   const [navCollapsed, setNavCollapsed] = useState(false)
@@ -280,14 +284,25 @@ export function ExtractorApp() {
               ระบบจะกระจายข้อมูลลงทุกแถว/คอลัมน์ให้อัตโนมัติ
             </p>
 
-            <div className="mb-3 flex items-center justify-between rounded-2xl bg-card px-3.5 py-2.5 shadow-[inset_0_0_0_0.5px_var(--border)]">
-              <span className="text-[13px] text-muted-foreground">
-                ตัวอย่างที่จะคัดลอก — คอลัมน์แรก: <span className="font-semibold text-foreground">{firstColLabel}</span>
-              </span>
-              <Button type="button" variant="secondary" size="sm" className="rounded-full" onClick={toggleColumnOrder}>
-                <ArrowLeftRight />
-                สลับคอลัมน์
-              </Button>
+            <div className="mb-3 flex flex-col gap-2.5 rounded-2xl bg-card px-3.5 py-2.5 shadow-[inset_0_0_0_0.5px_var(--border)]">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[13px] text-muted-foreground">
+                  ตัวอย่างที่จะคัดลอก — คอลัมน์แรก: <span className="font-semibold text-foreground">{firstColLabel}</span>
+                </span>
+                <Button type="button" variant="secondary" size="sm" className="rounded-full" onClick={toggleColumnOrder}>
+                  <ArrowLeftRight />
+                  สลับคอลัมน์
+                </Button>
+              </div>
+              <label className="flex items-center justify-between gap-2 border-t-[0.5px] border-border pt-2.5">
+                <span>
+                  <span className="block text-[13px] font-medium text-foreground">QTY (จำนวนคน)</span>
+                  <span className="block text-[12px] text-muted-foreground">
+                    นับจาก "+" ในชื่อ เช่น "กุ๊กไก่ + สม" = 2 คน — เพิ่มเป็นคอลัมน์ที่ 3
+                  </span>
+                </span>
+                <Switch checked={qtyEnabled} onCheckedChange={toggleQty} />
+              </label>
             </div>
 
             <div className="mb-4 max-h-72 overflow-y-auto rounded-2xl bg-card shadow-[inset_0_0_0_0.5px_var(--border)]">
@@ -300,6 +315,11 @@ export function ExtractorApp() {
                     <th className="border-b-[0.5px] border-border px-3 py-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
                       {secondColLabel}
                     </th>
+                    {qtyEnabled && (
+                      <th className="border-b-[0.5px] border-border px-3 py-2 text-center text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+                        Qty
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -309,6 +329,11 @@ export function ExtractorApp() {
                       <tr key={row.id} className="border-b-[0.5px] border-border last:border-b-0">
                         <td className="px-3 py-2 align-top break-words">{first || '—'}</td>
                         <td className="px-3 py-2 align-top break-words font-medium">{second || '—'}</td>
+                        {qtyEnabled && (
+                          <td className="px-3 py-2 text-center align-top font-medium tabular-nums">
+                            {countQty(row.name)}
+                          </td>
+                        )}
                       </tr>
                     )
                   })}

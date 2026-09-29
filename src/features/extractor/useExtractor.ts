@@ -3,6 +3,7 @@ import { copyValue, insertAtCursor } from './clipboard'
 import {
   charAdvance,
   charRetreat,
+  countQty,
   parseText,
   tokenAdvance,
   tokenRetreat,
@@ -34,6 +35,12 @@ export function useExtractor() {
   // swappable since some sheets are laid out Name-first instead.
   const [menuFirst, setMenuFirst] = useState(true)
   const toggleColumnOrder = useCallback(() => setMenuFirst((v) => !v), [])
+
+  // Optional 3rd column: headcount, derived from counting "+"-separated
+  // names (e.g. "กุ๊กไก่ + สม" -> 2). Always appended last, after whichever
+  // of Menu/Name comes first.
+  const [qtyEnabled, setQtyEnabled] = useState(false)
+  const toggleQty = useCallback(() => setQtyEnabled((v) => !v), [])
 
   const makeId = () => nextId.current++
 
@@ -115,9 +122,13 @@ export function useExtractor() {
   const buildTsv = useCallback(
     () =>
       rows
-        .map((r) => (menuFirst ? `${r.menu}\t${r.name}` : `${r.name}\t${r.menu}`))
+        .map((r) => {
+          const cols = menuFirst ? [r.menu, r.name] : [r.name, r.menu]
+          if (qtyEnabled) cols.push(String(countQty(r.name)))
+          return cols.join('\t')
+        })
         .join('\n'),
-    [rows, menuFirst],
+    [rows, menuFirst, qtyEnabled],
   )
 
   const copyAllForSheets = useCallback(
@@ -286,6 +297,8 @@ export function useExtractor() {
     pasteIntoRawText,
     menuFirst,
     toggleColumnOrder,
+    qtyEnabled,
+    toggleQty,
   }
 }
 
