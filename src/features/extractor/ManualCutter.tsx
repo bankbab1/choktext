@@ -168,33 +168,33 @@ export function ManualCutter({
           type="button"
           variant="secondary"
           disabled={atStart}
-          className="h-9.5 flex-1 text-primary"
+          className="h-10 flex-[1.3] rounded-2xl text-primary"
           onClick={handleQuickCut}
         >
           <Scissors />
-          ตัด+คัดลอกด่วน
+          ตัด+คัดลอก
         </Button>
         <Button
           type="button"
           variant="destructive"
-          size="icon"
-          className="rounded-full"
           disabled={atStart}
+          className="h-10 flex-1 rounded-2xl"
           aria-label="ลบข้อความที่เลือกทิ้ง"
           onClick={() => onCut('discard')}
         >
           <Trash2 />
+          ลบทิ้ง
         </Button>
         <Button
           type="button"
           variant="secondary"
-          size="icon"
-          className="rounded-full"
           disabled={!canUndo}
+          className="h-10 flex-1 rounded-2xl"
           aria-label="ย้อนการตัดล่าสุด"
           onClick={onUndo}
         >
           <Undo2 />
+          ย้อนกลับ
         </Button>
       </div>
 

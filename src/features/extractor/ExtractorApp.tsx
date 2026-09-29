@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ArrowLeftRight,
+  Check,
   Clipboard,
   ClipboardPaste,
   List,
@@ -75,15 +76,31 @@ export function ExtractorApp() {
 
   const [navCollapsed, setNavCollapsed] = useState(false)
   const [pasteHint, setPasteHint] = useState<string | null>(null)
+  const [justCopied, setJustCopied] = useState(false)
   const rawInputRef = useRef<HTMLTextAreaElement>(null)
   const tsvFallbackRef = useRef<HTMLTextAreaElement>(null)
   const pasteHintTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const copiedFlashTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     const onScroll = () => setNavCollapsed(window.scrollY > 24)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Flip the copy button itself to a "copied" state instead of relying on
+  // the status line below it — that text doesn't visibly change on a
+  // second tap if the message happens to read the same, so it's easy to
+  // miss. Setting this from the click itself (not an effect watching
+  // copyStatus) means the timer always restarts cleanly on repeat taps.
+  const handleCopyClick = async () => {
+    const ok = await copyAllForSheets(tsvFallbackRef.current)
+    if (ok) {
+      clearTimeout(copiedFlashTimer.current)
+      setJustCopied(true)
+      copiedFlashTimer.current = setTimeout(() => setJustCopied(false), 1800)
+    }
+  }
 
   const hasResults = rows.length > 0
   const primaryDisabled = !rawText.trim()
@@ -343,21 +360,17 @@ export function ExtractorApp() {
 
             <Button
               type="button"
-              className="h-13 w-full rounded-full text-base"
-              onClick={() => copyAllForSheets(tsvFallbackRef.current)}
+              className={cn(
+                'h-13 w-full rounded-full text-base transition-colors duration-200',
+                justCopied && 'bg-success hover:bg-success',
+              )}
+              onClick={handleCopyClick}
             >
-              <Clipboard />
-              คัดลอกสำหรับ Google Sheets
+              {justCopied ? <Check /> : <Clipboard />}
+              {justCopied ? 'คัดลอกแล้ว!' : 'คัดลอกสำหรับ Google Sheets'}
             </Button>
-            {copyStatus && (
-              <p
-                className={cn(
-                  'mt-2.5 ml-1 text-[13.5px]',
-                  copyStatus.tone === 'ok' ? 'text-success' : 'text-destructive',
-                )}
-              >
-                {copyStatus.message}
-              </p>
+            {copyStatus?.tone === 'err' && (
+              <p className="mt-2.5 ml-1 text-[13.5px] text-destructive">{copyStatus.message}</p>
             )}
             <details className="mx-1 mt-3.5 text-[13px] text-muted-foreground">
               <summary className="cursor-pointer">ถ้าคัดลอกอัตโนมัติไม่ได้ (คัดลอกด้วยตนเอง)</summary>

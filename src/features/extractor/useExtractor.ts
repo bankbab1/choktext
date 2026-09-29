@@ -39,7 +39,7 @@ export function useExtractor() {
   // Optional 3rd column: headcount, derived from counting "+"-separated
   // names (e.g. "กุ๊กไก่ + สม" -> 2). Always appended last, after whichever
   // of Menu/Name comes first.
-  const [qtyEnabled, setQtyEnabled] = useState(false)
+  const [qtyEnabled, setQtyEnabled] = useState(true)
   const toggleQty = useCallback(() => setQtyEnabled((v) => !v), [])
 
   const makeId = () => nextId.current++
