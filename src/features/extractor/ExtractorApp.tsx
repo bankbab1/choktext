@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  ArrowLeftRight,
   Check,
   Clipboard,
   ClipboardPaste,
@@ -110,8 +109,6 @@ export function ExtractorApp() {
     buildTsv,
     copyAllForSheets,
     pasteIntoRawText,
-    menuFirst,
-    toggleColumnOrder,
     qtyEnabled,
     toggleQty,
     columnSpans,
@@ -167,10 +164,6 @@ export function ExtractorApp() {
     }
   }
 
-  const firstColLabel = menuFirst ? 'Menu' : 'Name'
-  const secondColLabel = menuFirst ? 'Name' : 'Menu'
-  const firstColSpan = menuFirst ? columnSpans.menu : columnSpans.name
-  const secondColSpan = menuFirst ? columnSpans.name : columnSpans.menu
 
   return (
     <div className="min-h-dvh bg-background pb-10 text-foreground">
@@ -343,21 +336,12 @@ export function ExtractorApp() {
           <section className="mb-6 rounded-3xl border border-border/60 bg-background p-3.5">
             <StepHeader n={3} label="คัดลอกไปวาง" />
             <p className="mx-1 mb-3 text-[13px] text-muted-foreground">
-              แตะปุ่มด้านล่าง แล้วไปแตะเลือก "เซลล์คอลัมน์ {firstColLabel} แถวแรก" ใน Google Sheets แล้ววาง (Paste) ครั้งเดียว
+              แตะปุ่มด้านล่าง แล้วไปแตะเลือก "เซลล์คอลัมน์ Menu แถวแรก" ใน Google Sheets แล้ววาง (Paste) ครั้งเดียว
               ระบบจะกระจายข้อมูลลงทุกแถว/คอลัมน์ให้อัตโนมัติ
             </p>
 
             <div className="mb-3 flex flex-col gap-2.5 rounded-2xl bg-card px-3.5 py-2.5 shadow-[inset_0_0_0_0.5px_var(--border)]">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[13px] text-muted-foreground">
-                  ตัวอย่างที่จะคัดลอก — คอลัมน์แรก: <span className="font-semibold text-foreground">{firstColLabel}</span>
-                </span>
-                <Button type="button" variant="secondary" size="sm" className="rounded-full" onClick={toggleColumnOrder}>
-                  <ArrowLeftRight />
-                  สลับคอลัมน์
-                </Button>
-              </div>
-              <label className="flex items-center justify-between gap-2 border-t-[0.5px] border-border pt-2.5">
+              <label className="flex items-center justify-between gap-2">
                 <span>
                   <span className="block text-[13px] font-medium text-foreground">QTY (จำนวนคน)</span>
                   <span className="block text-[12px] text-muted-foreground">
@@ -403,18 +387,22 @@ export function ExtractorApp() {
                 <thead className="sticky top-0 z-10 bg-card">
                   <tr>
                     <th
-                      colSpan={firstColSpan}
+                      colSpan={columnSpans.menu}
                       className="border-b-[0.5px] border-border px-3 py-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase"
                     >
-                      {firstColLabel}
-                      {firstColSpan > 1 && <span className="ml-1 font-normal normal-case">({firstColSpan} คอลัมน์)</span>}
+                      Menu
+                      {columnSpans.menu > 1 && (
+                        <span className="ml-1 font-normal normal-case">({columnSpans.menu} คอลัมน์)</span>
+                      )}
                     </th>
                     <th
-                      colSpan={secondColSpan}
+                      colSpan={columnSpans.name}
                       className="border-b-[0.5px] border-border px-3 py-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase"
                     >
-                      {secondColLabel}
-                      {secondColSpan > 1 && <span className="ml-1 font-normal normal-case">({secondColSpan} คอลัมน์)</span>}
+                      Name
+                      {columnSpans.name > 1 && (
+                        <span className="ml-1 font-normal normal-case">({columnSpans.name} คอลัมน์)</span>
+                      )}
                     </th>
                     {qtyEnabled && (
                       <th
@@ -430,14 +418,13 @@ export function ExtractorApp() {
                   {rows.map((row) => {
                     const name = sanitizeForSheets(row.name)
                     const menu = sanitizeForSheets(row.menu)
-                    const [first, second] = menuFirst ? [menu, name] : [name, menu]
                     return (
                       <tr key={row.id} className="border-b-[0.5px] border-border last:border-b-0">
-                        <td colSpan={firstColSpan} className="px-3 py-2 align-top break-words">
-                          {first || '—'}
+                        <td colSpan={columnSpans.menu} className="px-3 py-2 align-top break-words">
+                          {menu || '—'}
                         </td>
-                        <td colSpan={secondColSpan} className="px-3 py-2 align-top break-words font-medium">
-                          {second || '—'}
+                        <td colSpan={columnSpans.name} className="px-3 py-2 align-top break-words font-medium">
+                          {name || '—'}
                         </td>
                         {qtyEnabled && (
                           <td colSpan={columnSpans.qty} className="px-3 py-2 text-center align-top font-medium tabular-nums">

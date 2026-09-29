@@ -32,14 +32,9 @@ export function useExtractor() {
   const [historyLength, setHistoryLength] = useState(0)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>(null)
   const [clearDrawerOpen, setClearDrawerOpen] = useState(false)
-  // Menu-first is the default column order for the Sheets export/preview —
-  // swappable since some sheets are laid out Name-first instead.
-  const [menuFirst, setMenuFirst] = useState(true)
-  const toggleColumnOrder = useCallback(() => setMenuFirst((v) => !v), [])
 
   // Optional 3rd column: headcount, derived from counting "+"-separated
-  // names (e.g. "กุ๊กไก่ + สม" -> 2). Always appended last, after whichever
-  // of Menu/Name comes first.
+  // names (e.g. "กุ๊กไก่ + สม" -> 2). Always appended last, after Menu/Name.
   const [qtyEnabled, setQtyEnabled] = useState(true)
   const toggleQty = useCallback(() => setQtyEnabled((v) => !v), [])
 
@@ -47,9 +42,8 @@ export function useExtractor() {
   // columns per field (e.g. "Menu" merged across 5 columns before "Name"
   // starts) — with no merge info in plain-text TSV, matching that layout
   // means padding each field's value with (span - 1) blank cells so the
-  // next field's value lands under the right column. Default 1 = no
-  // padding, i.e. today's plain 2-3 column behavior.
-  const [columnSpans, setColumnSpans] = useState({ menu: 1, name: 1, qty: 1 })
+  // next field's value lands under the right column.
+  const [columnSpans, setColumnSpans] = useState({ menu: 5, name: 4, qty: 1 })
   const setColumnSpan = useCallback((field: 'menu' | 'name' | 'qty', span: number) => {
     const clamped = Math.max(1, Math.min(50, Math.round(span) || 1))
     setColumnSpans((prev) => ({ ...prev, [field]: clamped }))
@@ -140,32 +134,29 @@ export function useExtractor() {
         .map((r) => {
           const name = sanitizeForSheets(r.name)
           const menu = sanitizeForSheets(r.menu)
-          const menuCols = padded(menu, columnSpans.menu)
-          const nameCols = padded(name, columnSpans.name)
-          const cols = menuFirst ? [...menuCols, ...nameCols] : [...nameCols, ...menuCols]
+          const cols = [...padded(menu, columnSpans.menu), ...padded(name, columnSpans.name)]
           if (qtyEnabled) cols.push(...padded(String(countQty(name)), columnSpans.qty))
           return cols.join('\t')
         })
         .join('\n'),
-    [rows, menuFirst, qtyEnabled, columnSpans],
+    [rows, qtyEnabled, columnSpans],
   )
 
   const copyAllForSheets = useCallback(
     async (fallbackEl: HTMLTextAreaElement | null) => {
       const tsv = buildTsv()
       const ok = await copyValue(tsv, fallbackEl)
-      const firstColLabel = menuFirst ? 'Menu' : 'Name'
       setCopyStatus(
         ok
           ? {
               tone: 'ok',
-              message: `คัดลอกแล้ว (${rows.length} แถว) — ไปแตะเซลล์ ${firstColLabel} แถวแรกใน Google Sheets แล้ววางได้เลย`,
+              message: `คัดลอกแล้ว (${rows.length} แถว) — ไปแตะเซลล์ Menu แถวแรกใน Google Sheets แล้ววางได้เลย`,
             }
           : { tone: 'err', message: 'คัดลอกอัตโนมัติไม่สำเร็จ กรุณาใช้กล่องคัดลอกด้วยตนเองด้านล่าง' },
       )
       return ok
     },
-    [buildTsv, rows.length, menuFirst],
+    [buildTsv, rows.length],
   )
 
   // ---- Manual mode ----
@@ -314,8 +305,6 @@ export function useExtractor() {
     buildTsv,
     copyAllForSheets,
     pasteIntoRawText,
-    menuFirst,
-    toggleColumnOrder,
     qtyEnabled,
     toggleQty,
     columnSpans,
