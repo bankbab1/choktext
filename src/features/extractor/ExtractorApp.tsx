@@ -5,7 +5,9 @@ import {
   Clipboard,
   ClipboardPaste,
   List,
+  Merge,
   MessageSquareText,
+  Minus,
   Moon,
   Plus,
   RotateCcw,
@@ -33,6 +35,46 @@ function StepHeader({ n, label }: { n: number; label: string }) {
         {n}
       </span>
       <p className="text-[13px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</p>
+    </div>
+  )
+}
+
+function ColumnSpanStepper({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: number
+  onChange: (next: number) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-[13px] text-foreground">{label}</span>
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon-sm"
+          className="rounded-full"
+          disabled={value <= 1}
+          aria-label={`ลดจำนวนคอลัมน์ของ ${label}`}
+          onClick={() => onChange(value - 1)}
+        >
+          <Minus />
+        </Button>
+        <span className="w-6 text-center text-[13.5px] font-semibold tabular-nums">{value}</span>
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon-sm"
+          className="rounded-full"
+          aria-label={`เพิ่มจำนวนคอลัมน์ของ ${label}`}
+          onClick={() => onChange(value + 1)}
+        >
+          <Plus />
+        </Button>
+      </div>
     </div>
   )
 }
@@ -72,6 +114,8 @@ export function ExtractorApp() {
     toggleColumnOrder,
     qtyEnabled,
     toggleQty,
+    columnSpans,
+    setColumnSpan,
   } = api
 
   const [navCollapsed, setNavCollapsed] = useState(false)
@@ -125,6 +169,8 @@ export function ExtractorApp() {
 
   const firstColLabel = menuFirst ? 'Menu' : 'Name'
   const secondColLabel = menuFirst ? 'Name' : 'Menu'
+  const firstColSpan = menuFirst ? columnSpans.menu : columnSpans.name
+  const secondColSpan = menuFirst ? columnSpans.name : columnSpans.menu
 
   return (
     <div className="min-h-dvh bg-background pb-10 text-foreground">
@@ -320,20 +366,61 @@ export function ExtractorApp() {
                 </span>
                 <Switch checked={qtyEnabled} onCheckedChange={toggleQty} />
               </label>
+
+              <details className="border-t-[0.5px] border-border pt-2.5">
+                <summary className="cursor-pointer text-[13px] font-medium text-foreground">
+                  <Merge className="mr-1 inline size-3.5 align-[-2px]" />
+                  ตั้งค่าจำนวนคอลัมน์ (ถ้าชีทมีเซลล์ merge)
+                </summary>
+                <p className="mt-1.5 text-[12px] text-muted-foreground">
+                  ถ้าหัวตารางในชีทของคุณ merge เซลล์กว้างกว่า 1 คอลัมน์ต่อฟิลด์ (เช่น Menu กว้าง 5 คอลัมน์) ตั้งจำนวนตรงนี้
+                  เพื่อแทรกคอลัมน์ว่างคั่นให้ตรงตำแหน่งตอนวาง
+                </p>
+                <div className="mt-2.5 flex flex-col gap-2">
+                  <ColumnSpanStepper
+                    label="Menu"
+                    value={columnSpans.menu}
+                    onChange={(v) => setColumnSpan('menu', v)}
+                  />
+                  <ColumnSpanStepper
+                    label="Name"
+                    value={columnSpans.name}
+                    onChange={(v) => setColumnSpan('name', v)}
+                  />
+                  {qtyEnabled && (
+                    <ColumnSpanStepper
+                      label="Qty"
+                      value={columnSpans.qty}
+                      onChange={(v) => setColumnSpan('qty', v)}
+                    />
+                  )}
+                </div>
+              </details>
             </div>
 
             <div className="mb-4 max-h-72 overflow-y-auto rounded-2xl bg-card shadow-[inset_0_0_0_0.5px_var(--border)]">
               <table className="w-full border-collapse text-left text-[13.5px]">
                 <thead className="sticky top-0 z-10 bg-card">
                   <tr>
-                    <th className="border-b-[0.5px] border-border px-3 py-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+                    <th
+                      colSpan={firstColSpan}
+                      className="border-b-[0.5px] border-border px-3 py-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase"
+                    >
                       {firstColLabel}
+                      {firstColSpan > 1 && <span className="ml-1 font-normal normal-case">({firstColSpan} คอลัมน์)</span>}
                     </th>
-                    <th className="border-b-[0.5px] border-border px-3 py-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+                    <th
+                      colSpan={secondColSpan}
+                      className="border-b-[0.5px] border-border px-3 py-2 text-[11px] font-bold tracking-wide text-muted-foreground uppercase"
+                    >
                       {secondColLabel}
+                      {secondColSpan > 1 && <span className="ml-1 font-normal normal-case">({secondColSpan} คอลัมน์)</span>}
                     </th>
                     {qtyEnabled && (
-                      <th className="border-b-[0.5px] border-border px-3 py-2 text-center text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+                      <th
+                        colSpan={columnSpans.qty}
+                        className="border-b-[0.5px] border-border px-3 py-2 text-center text-[11px] font-bold tracking-wide text-muted-foreground uppercase"
+                      >
                         Qty
                       </th>
                     )}
@@ -346,10 +433,14 @@ export function ExtractorApp() {
                     const [first, second] = menuFirst ? [menu, name] : [name, menu]
                     return (
                       <tr key={row.id} className="border-b-[0.5px] border-border last:border-b-0">
-                        <td className="px-3 py-2 align-top break-words">{first || '—'}</td>
-                        <td className="px-3 py-2 align-top break-words font-medium">{second || '—'}</td>
+                        <td colSpan={firstColSpan} className="px-3 py-2 align-top break-words">
+                          {first || '—'}
+                        </td>
+                        <td colSpan={secondColSpan} className="px-3 py-2 align-top break-words font-medium">
+                          {second || '—'}
+                        </td>
                         {qtyEnabled && (
-                          <td className="px-3 py-2 text-center align-top font-medium tabular-nums">
+                          <td colSpan={columnSpans.qty} className="px-3 py-2 text-center align-top font-medium tabular-nums">
                             {countQty(name)}
                           </td>
                         )}

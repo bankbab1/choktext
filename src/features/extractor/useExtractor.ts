@@ -43,6 +43,18 @@ export function useExtractor() {
   const [qtyEnabled, setQtyEnabled] = useState(true)
   const toggleQty = useCallback(() => setQtyEnabled((v) => !v), [])
 
+  // Some destination sheets have a merged-cell header spanning several
+  // columns per field (e.g. "Menu" merged across 5 columns before "Name"
+  // starts) — with no merge info in plain-text TSV, matching that layout
+  // means padding each field's value with (span - 1) blank cells so the
+  // next field's value lands under the right column. Default 1 = no
+  // padding, i.e. today's plain 2-3 column behavior.
+  const [columnSpans, setColumnSpans] = useState({ menu: 1, name: 1, qty: 1 })
+  const setColumnSpan = useCallback((field: 'menu' | 'name' | 'qty', span: number) => {
+    const clamped = Math.max(1, Math.min(50, Math.round(span) || 1))
+    setColumnSpans((prev) => ({ ...prev, [field]: clamped }))
+  }, [])
+
   const makeId = () => nextId.current++
 
   const setMode = useCallback((next: Mode) => setModeState(next), [])
@@ -120,18 +132,22 @@ export function useExtractor() {
     })
   }, [])
 
+  const padded = (value: string, span: number) => [value, ...Array(span - 1).fill('')]
+
   const buildTsv = useCallback(
     () =>
       rows
         .map((r) => {
           const name = sanitizeForSheets(r.name)
           const menu = sanitizeForSheets(r.menu)
-          const cols = menuFirst ? [menu, name] : [name, menu]
-          if (qtyEnabled) cols.push(String(countQty(name)))
+          const menuCols = padded(menu, columnSpans.menu)
+          const nameCols = padded(name, columnSpans.name)
+          const cols = menuFirst ? [...menuCols, ...nameCols] : [...nameCols, ...menuCols]
+          if (qtyEnabled) cols.push(...padded(String(countQty(name)), columnSpans.qty))
           return cols.join('\t')
         })
         .join('\n'),
-    [rows, menuFirst, qtyEnabled],
+    [rows, menuFirst, qtyEnabled, columnSpans],
   )
 
   const copyAllForSheets = useCallback(
@@ -302,6 +318,8 @@ export function useExtractor() {
     toggleColumnOrder,
     qtyEnabled,
     toggleQty,
+    columnSpans,
+    setColumnSpan,
   }
 }
 
