@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Scissors,
   Sun,
+  TextSelect,
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -459,6 +460,24 @@ export function ExtractorApp() {
             )}
             <details className="mx-1 mt-3.5 text-[13px] text-muted-foreground">
               <summary className="cursor-pointer">ถ้าคัดลอกอัตโนมัติไม่ได้ (คัดลอกด้วยตนเอง)</summary>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span className="text-[12px] text-muted-foreground">แตะปุ่มเพื่อเลือกข้อความทั้งหมด แล้วแตะค้าง เลือก "คัดลอก"</span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="shrink-0 rounded-full"
+                  onClick={() => {
+                    const el = tsvFallbackRef.current
+                    if (!el) return
+                    el.focus()
+                    el.select()
+                  }}
+                >
+                  <TextSelect />
+                  เลือกทั้งหมด
+                </Button>
+              </div>
               <textarea
                 ref={tsvFallbackRef}
                 readOnly
